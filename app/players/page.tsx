@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase-server'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase'
 import NavBar from '@/components/NavBar'
 
 interface Profile {
@@ -14,29 +17,36 @@ interface GameCount {
   completed: number
 }
 
-export const revalidate = 60 // refresh every 60s
+export default function PlayersPage() {
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([])
+  const [countMap, setCountMap] = useState<Record<string, GameCount>>({})
+  const [loading, setLoading] = useState(true)
 
-export default async function PlayersPage() {
-  const supabase = await createClient()
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient()
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('created_at', { ascending: false })
+      const { data: gameCounts } = await supabase
+        .from('user_games')
+        .select('user_id, status')
 
-  const allProfiles = (profiles as Profile[]) ?? []
+      const map: Record<string, GameCount> = {}
+      for (const row of gameCounts ?? []) {
+        if (!map[row.user_id]) map[row.user_id] = { user_id: row.user_id, count: 0, completed: 0 }
+        map[row.user_id].count++
+        if (row.status === '100%') map[row.user_id].completed++
+      }
 
-  // Fetch game counts per user
-  const { data: gameCounts } = await supabase
-    .from('user_games')
-    .select('user_id, status')
-
-  const countMap: Record<string, GameCount> = {}
-  for (const row of gameCounts ?? []) {
-    if (!countMap[row.user_id]) countMap[row.user_id] = { user_id: row.user_id, count: 0, completed: 0 }
-    countMap[row.user_id].count++
-    if (row.status === '100%') countMap[row.user_id].completed++
-  }
+      setAllProfiles((profiles as Profile[]) ?? [])
+      setCountMap(map)
+      setLoading(false)
+    }
+    fetchData()
+  }, [])
 
   return (
     <>
@@ -53,7 +63,13 @@ export default async function PlayersPage() {
           </p>
         </div>
 
-        {allProfiles.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="skeleton rounded-2xl" style={{ height: 88 }} />
+            ))}
+          </div>
+        ) : allProfiles.length === 0 ? (
           <div className="text-center py-24" style={{ color: 'var(--text-muted)' }}>
             <div className="text-5xl mb-4">👾</div>
             <p>Aucun joueur pour l&apos;instant</p>
@@ -72,14 +88,7 @@ export default async function PlayersPage() {
                 <Link key={profile.id} href={`/profile/${profile.username}`}
                   className="glass-card rounded-2xl p-5 flex items-center gap-4 transition-all group no-underline"
                   style={{ border: '1px solid var(--border)' }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(123,47,255,0.4)'
-                    ;(e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'
-                    ;(e.currentTarget as HTMLElement).style.background = ''
-                  }}>
+>
 
                   {/* Avatar */}
                   <div className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-black flex-shrink-0 transition-all group-hover:scale-105"
@@ -133,7 +142,7 @@ export default async function PlayersPage() {
               )
             })}
           </div>
-        )}
+        ) : null}
       </main>
     </>
   )
