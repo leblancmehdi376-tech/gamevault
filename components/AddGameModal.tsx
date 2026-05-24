@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 
-export const PLATFORMS = ['PC', 'PS5', 'PS4', 'Xbox Series X', 'Xbox One', 'Nintendo Switch', 'iOS', 'Android']
+export const PLATFORMS = ['PC', 'PS5', 'PS4', 'Xbox Series X', 'Xbox One', 'Nintendo Switch', 'Nintendo Switch 2', 'iOS', 'Android']
 export const STATUSES = [
   { value: '100%', label: '100% 🏆', color: 'var(--status-done)' },
   { value: 'En cours', label: 'En cours ▶', color: 'var(--status-playing)' },
