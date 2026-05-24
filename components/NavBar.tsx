@@ -36,6 +36,7 @@ export default function NavBar() {
   const links = [
     { href: '/library', label: 'Bibliothèque', icon: '◫' },
     { href: '/search', label: 'Rechercher', icon: '⌕' },
+    { href: '/players', label: 'Les potes', icon: '👾' },
   ]
 
   return (
