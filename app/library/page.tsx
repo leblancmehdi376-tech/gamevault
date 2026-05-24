@@ -35,6 +35,7 @@ export default function LibraryPage() {
   const [username, setUsername] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [showSteamModal, setShowSteamModal] = useState(false)
+  const [editingGame, setEditingGame] = useState<UserGame | null>(null)
 
   const supabase = createClient()
 
@@ -205,7 +206,7 @@ export default function LibraryPage() {
                   </div>
                 )}
 
-                {/* Status badge (always visible) */}
+                {/* Status badge */}
                 <div className="absolute top-1.5 left-1.5">
                   <span className="status-badge"
                     style={{
@@ -213,40 +214,114 @@ export default function LibraryPage() {
                       color: STATUS_COLORS[game.status],
                       border: `1px solid ${STATUS_COLORS[game.status]}44`,
                     }}>
-                    {game.status === '100%' ? '🏆' : ''}
+                    {game.status === '100%' ? '🏆 ' : ''}
                     {game.status}
                   </span>
                 </div>
 
-                {/* Hover overlay */}
-                <div className="overlay flex-col items-start">
-                  <p className="text-white text-xs font-semibold leading-tight mb-1">{game.title}</p>
-                  <p className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>{game.platform}</p>
+                {/* Pencil button — always visible on hover */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setEditingGame(game) }}
+                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                  style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)' }}
+                  title="Modifier">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M8.5 1.5a1.5 1.5 0 012.1 2.1L4 10.2l-2.7.6.6-2.7L8.5 1.5z" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
 
-                  {/* Quick status change */}
-                  <div className="flex flex-col gap-1 w-full">
-                    {STATUSES.filter((s) => s.value !== game.status).slice(0, 2).map((s) => (
-                      <button key={s.value}
-                        onClick={(e) => { e.stopPropagation(); updateStatus(game.id, s.value) }}
-                        className="text-left text-xs px-2 py-0.5 rounded transition-all"
-                        style={{ background: s.color + '22', color: s.color }}>
-                        → {s.value}
-                      </button>
-                    ))}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteGame(game.id) }}
-                      disabled={deletingId === game.id}
-                      className="text-xs px-2 py-0.5 rounded mt-0.5 transition-all"
-                      style={{ background: 'rgba(248,113,113,0.2)', color: '#f87171' }}>
-                      {deletingId === game.id ? '...' : '✕ Supprimer'}
-                    </button>
-                  </div>
+                {/* Bottom title on hover */}
+                <div className="overlay flex-col items-start justify-end">
+                  <p className="text-white text-xs font-semibold leading-tight">{game.title}</p>
+                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{game.platform}</p>
                 </div>
               </div>
             ))}
           </div>
         )}
       </main>
+
+      {/* Edit modal */}
+      {editingGame && (
+        <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && setEditingGame(null)}>
+          <div className="glass-card rounded-2xl w-full max-w-sm mx-4 p-6 animate-fadeIn"
+            style={{ border: '1px solid rgba(123,47,255,0.3)' }}>
+
+            <div className="flex items-start gap-4 mb-5">
+              {editingGame.cover_url && (
+                <img src={`https:${editingGame.cover_url}`} alt={editingGame.title}
+                  className="w-14 rounded-lg flex-shrink-0 object-cover" style={{ aspectRatio: '3/4' }} />
+              )}
+              <div>
+                <h2 className="font-bold text-base leading-tight" style={{ color: 'var(--text-primary)' }}>
+                  {editingGame.title}
+                </h2>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{editingGame.platform}</p>
+              </div>
+            </div>
+
+            {/* Status picker */}
+            <div className="mb-4">
+              <label className="text-xs font-semibold uppercase tracking-widest mb-2 block"
+                style={{ color: 'var(--text-secondary)' }}>Statut</label>
+              <div className="grid grid-cols-2 gap-2">
+                {STATUSES.map((s) => (
+                  <button key={s.value}
+                    onClick={() => setEditingGame({ ...editingGame, status: s.value })}
+                    className="rounded-lg py-2 px-3 text-sm font-medium transition-all text-left"
+                    style={{
+                      background: editingGame.status === s.value ? 'rgba(0,0,0,0.3)' : 'var(--bg-surface)',
+                      border: `1px solid ${editingGame.status === s.value ? s.color : 'var(--border)'}`,
+                      color: editingGame.status === s.value ? s.color : 'var(--text-secondary)',
+                    }}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Platform picker */}
+            <div className="mb-5">
+              <label className="text-xs font-semibold uppercase tracking-widest mb-2 block"
+                style={{ color: 'var(--text-secondary)' }}>Plateforme</label>
+              <select
+                value={editingGame.platform}
+                onChange={(e) => setEditingGame({ ...editingGame, platform: e.target.value })}
+                className="input-base select text-sm">
+                {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  await deleteGame(editingGame.id)
+                  setEditingGame(null)
+                }}
+                disabled={deletingId === editingGame.id}
+                className="px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
+                {deletingId === editingGame.id ? '...' : '🗑 Supprimer'}
+              </button>
+              <button onClick={() => setEditingGame(null)} className="btn-ghost flex-1 text-sm">
+                Annuler
+              </button>
+              <button
+                onClick={async () => {
+                  await updateStatus(editingGame.id, editingGame.status)
+                  // Also update platform
+                  const supabaseClient = createClient()
+                  await supabaseClient.from('user_games').update({ platform: editingGame.platform }).eq('id', editingGame.id)
+                  setGames((prev) => prev.map((g) => g.id === editingGame.id ? { ...g, status: editingGame.status, platform: editingGame.platform } : g))
+                  setEditingGame(null)
+                }}
+                className="btn-accent flex-1 text-sm">
+                Sauvegarder
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showSteamModal && userId && (
         <SteamImportModal
