@@ -59,10 +59,10 @@ export default function SteamImportModal({ userId, existingIgdbIds, onClose, onI
       setPlayer(data.player)
       setGames(data.games)
       // Pre-select only games NOT already in library
-      const newGames = new Set(
+      const newGames = new Set<number>(
         data.games
           .filter((g: SteamGame) => !existingIgdbIds.has(steamToDbId(g.appid)))
-          .map((g: SteamGame) => g.appid)
+          .map((g: SteamGame) => g.appid as number)
       )
       setSelected(newGames)
     } catch (err: unknown) {
