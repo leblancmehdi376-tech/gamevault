@@ -86,3 +86,4 @@ Dans **Authentication → Providers → Email** :
 Toutes les routes `/library` et `/search` sont protégées par le middleware.
 Les clés IGDB restent côté serveur (jamais exposées au navigateur).
 Le RLS Supabase empêche tout accès non autorisé en base.
+"# gamevault" 
