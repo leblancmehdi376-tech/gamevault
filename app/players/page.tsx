@@ -35,7 +35,7 @@ export default function PlayersPage() {
         .select('user_id, status')
 
       const map: Record<string, GameCount> = {}
-      for (const row of gameCounts ?? []) {
+      for (const row of (gameCounts ?? [])) {
         if (!map[row.user_id]) map[row.user_id] = { user_id: row.user_id, count: 0, completed: 0 }
         map[row.user_id].count++
         if (row.status === '100%') map[row.user_id].completed++
@@ -63,18 +63,22 @@ export default function PlayersPage() {
           </p>
         </div>
 
-        {loading ? (
+        {loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="skeleton rounded-2xl" style={{ height: 88 }} />
             ))}
           </div>
-        ) : allProfiles.length === 0 ? (
+        )}
+
+        {!loading && allProfiles.length === 0 && (
           <div className="text-center py-24" style={{ color: 'var(--text-muted)' }}>
             <div className="text-5xl mb-4">👾</div>
             <p>Aucun joueur pour l&apos;instant</p>
           </div>
-        ) : (
+        )}
+
+        {!loading && allProfiles.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {allProfiles.map((profile) => {
               const stats = countMap[profile.id] ?? { count: 0, completed: 0 }
@@ -87,13 +91,12 @@ export default function PlayersPage() {
               return (
                 <Link key={profile.id} href={`/profile/${profile.username}`}
                   className="glass-card rounded-2xl p-5 flex items-center gap-4 transition-all group no-underline"
-                  style={{ border: '1px solid var(--border)' }}
->
+                  style={{ border: '1px solid var(--border)' }}>
 
                   {/* Avatar */}
                   <div className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-black flex-shrink-0 transition-all group-hover:scale-105"
                     style={{
-                      background: `linear-gradient(135deg, var(--accent) 0%, #1a3a6a 100%)`,
+                      background: 'linear-gradient(135deg, var(--accent) 0%, #1a3a6a 100%)',
                       color: '#fff',
                       fontFamily: 'var(--font-orbitron)',
                     }}>
@@ -118,16 +121,14 @@ export default function PlayersPage() {
                         </span>
                       )}
                     </div>
-
-                    {/* Completion bar */}
                     {stats.count > 0 && (
                       <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--bg-hover)' }}>
-                        <div className="h-full rounded-full transition-all"
+                        <div className="h-full rounded-full"
                           style={{
                             width: `${completionRate}%`,
                             background: completionRate === 100
                               ? 'var(--status-done)'
-                              : `linear-gradient(90deg, var(--accent), var(--status-done))`,
+                              : 'linear-gradient(90deg, var(--accent), var(--status-done))',
                           }} />
                       </div>
                     )}
@@ -142,7 +143,7 @@ export default function PlayersPage() {
               )
             })}
           </div>
-        ) : null}
+        )}
       </main>
     </>
   )
