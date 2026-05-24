@@ -219,22 +219,22 @@ export default function LibraryPage() {
                   </span>
                 </div>
 
-                {/* Pencil button — always visible on hover */}
+                {/* Bottom title on hover — pointer-events-none so clicks pass through */}
+                <div className="overlay flex-col items-start justify-end" style={{ pointerEvents: 'none' }}>
+                  <p className="text-white text-xs font-semibold leading-tight">{game.title}</p>
+                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{game.platform}</p>
+                </div>
+
+                {/* Pencil button — on top of everything */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); setEditingGame(game) }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingGame(game) }}
                   className="absolute top-1.5 right-1.5 w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                  style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)' }}
+                  style={{ background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,255,255,0.2)', zIndex: 10 }}
                   title="Modifier">
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M8.5 1.5a1.5 1.5 0 012.1 2.1L4 10.2l-2.7.6.6-2.7L8.5 1.5z" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-
-                {/* Bottom title on hover */}
-                <div className="overlay flex-col items-start justify-end">
-                  <p className="text-white text-xs font-semibold leading-tight">{game.title}</p>
-                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{game.platform}</p>
-                </div>
               </div>
             ))}
           </div>
