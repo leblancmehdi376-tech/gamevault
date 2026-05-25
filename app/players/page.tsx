@@ -32,21 +32,29 @@ export default function PlayersPage() {
       .select('*')
       .order('created_at', { ascending: false })
 
-    const { data: gameCounts } = await supabase
-      .from('user_games')
-      .select('user_id, status')
-      .limit(10000)
-
+    // Query per-user to avoid Supabase 1000-row server cap
+    const allProfs = (profiles as Profile[]) ?? []
     const map: Record<string, PlayerStats> = {}
-    for (const row of (gameCounts ?? [])) {
-      if (!map[row.user_id]) map[row.user_id] = { total: 0, completed: 0, finished: 0, playing: 0 }
-      map[row.user_id].total++
-      if (row.status === '100%') map[row.user_id].completed++
-      if (row.status === 'Terminé') map[row.user_id].finished++
-      if (row.status === 'En cours') map[row.user_id].playing++
-    }
 
-    setAllProfiles((profiles as Profile[]) ?? [])
+    await Promise.all(
+      allProfs.map(async (profile) => {
+        const { data } = await supabase
+          .from('user_games')
+          .select('status')
+          .eq('user_id', profile.id)
+          .limit(10000)
+
+        const rows = data ?? []
+        map[profile.id] = {
+          total: rows.length,
+          completed: rows.filter((r: {status: string}) => r.status === '100%').length,
+          finished: rows.filter((r: {status: string}) => r.status === 'Terminé').length,
+          playing: rows.filter((r: {status: string}) => r.status === 'En cours').length,
+        }
+      })
+    )
+
+    setAllProfiles(allProfs)
     setStatsMap(map)
     setLoading(false)
   }, [])
