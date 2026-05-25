@@ -19,7 +19,6 @@ interface UserGame {
   platform: string
   status: string
   is_favorite: boolean
-  is_multi: boolean
   rating: number | null
 }
 
@@ -169,14 +168,6 @@ export default async function ProfilePage({
                   {/* Status dot */}
                   <div className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full"
                     style={{ background: STATUS_COLORS[game.status], boxShadow: `0 0 6px ${STATUS_COLORS[game.status]}` }} />
-
-                  {/* Multi badge */}
-                  {game.is_multi && (
-                    <div className="absolute top-1.5 left-5 px-1 py-0.5 rounded text-xs font-bold leading-none"
-                      style={{ background: 'rgba(123,47,255,0.8)', color: '#fff', fontSize: '9px' }}>
-                      MULTI
-                    </div>
-                  )}
 
                   {/* Favorite */}
                   {game.is_favorite && (

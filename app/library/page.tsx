@@ -18,7 +18,6 @@ interface UserGame {
   platform: string
   status: string
   is_favorite: boolean
-  is_multi: boolean
   rating: number | null
   created_at: string
 }
@@ -29,6 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
   'Terminé': 'var(--status-finished)',
   'Abandonné': 'var(--status-dropped)',
   'À commencer': 'var(--status-backlog)',
+  'Multijoueur': '#a78bfa',
 }
 
 const DEFAULT_FILTERS: Filters = {
@@ -199,14 +199,6 @@ export default function LibraryPage() {
                 <div className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full"
                   style={{ background: STATUS_COLORS[game.status], boxShadow: `0 0 6px ${STATUS_COLORS[game.status]}` }} />
 
-                {/* Multi badge */}
-                {game.is_multi && (
-                  <div className="absolute top-1.5 left-5 px-1 py-0.5 rounded text-xs font-bold leading-none"
-                    style={{ background: 'rgba(123,47,255,0.8)', color: '#fff', fontSize: '9px' }}>
-                    MULTI
-                  </div>
-                )}
-
                 {/* Favorite star */}
                 {game.is_favorite && (
                   <div className="absolute bottom-6 right-1.5 text-xs" style={{ filter: 'drop-shadow(0 0 4px #fbbf24)', color: '#fbbf24' }}>★</div>
@@ -276,17 +268,6 @@ export default function LibraryPage() {
               ★ {editingGame.is_favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
             </button>
 
-            {/* Multi */}
-            <div className="flex items-center justify-between mb-4 px-1">
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Multijoueur</span>
-              <button onClick={() => setEditingGame({ ...editingGame, is_multi: !editingGame.is_multi })}
-                className="relative w-11 h-6 rounded-full transition-all"
-                style={{ background: editingGame.is_multi ? 'var(--accent)' : 'var(--bg-hover)' }}>
-                <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all"
-                  style={{ background: '#fff', left: editingGame.is_multi ? '22px' : '2px', boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
-              </button>
-            </div>
-
             {/* Rating */}
             <div className="mb-4">
               <label className="text-xs font-semibold uppercase tracking-widest mb-2 block"
@@ -340,7 +321,6 @@ export default function LibraryPage() {
                     status: editingGame.status,
                     platform: editingGame.platform,
                     is_favorite: editingGame.is_favorite,
-                    is_multi: editingGame.is_multi,
                     rating: editingGame.rating,
                   })
                   setEditingGame(null)

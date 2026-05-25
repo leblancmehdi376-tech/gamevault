@@ -8,6 +8,7 @@ export const STATUSES = [
   { value: '100%', label: '100% 🏆', color: 'var(--status-done)' },
   { value: 'En cours', label: 'En cours ▶', color: 'var(--status-playing)' },
   { value: 'Terminé', label: 'Terminé ✓', color: 'var(--status-finished)' },
+  { value: 'Multijoueur', label: 'Multijoueur 🎮', color: '#a78bfa' },
   { value: 'Abandonné', label: 'Abandonné ✗', color: 'var(--status-dropped)' },
   { value: 'À commencer', label: 'À commencer ◷', color: 'var(--status-backlog)' },
 ]
@@ -73,7 +74,6 @@ export function StarRating({
 export default function AddGameModal({ game, userId, onClose, onAdded }: Props) {
   const [platform, setPlatform] = useState('PC')
   const [status, setStatus] = useState('En cours')
-  const [isMulti, setIsMulti] = useState(false)
   const [rating, setRating] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -89,7 +89,6 @@ export default function AddGameModal({ game, userId, onClose, onAdded }: Props) 
       cover_url: game.cover?.url ?? null,
       platform,
       status,
-      is_multi: isMulti,
       rating: rating || null,
     })
     setLoading(false)
@@ -147,26 +146,6 @@ export default function AddGameModal({ game, userId, onClose, onAdded }: Props) 
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Multi tag */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest"
-                style={{ color: 'var(--text-secondary)' }}>Multijoueur</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Jeu joué en multi</p>
-            </div>
-            <button
-              onClick={() => setIsMulti((v) => !v)}
-              className="relative w-11 h-6 rounded-full transition-all"
-              style={{ background: isMulti ? 'var(--accent)' : 'var(--bg-hover)' }}>
-              <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all"
-                style={{
-                  background: '#fff',
-                  left: isMulti ? '22px' : '2px',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
-                }} />
-            </button>
           </div>
 
           {/* Rating */}
