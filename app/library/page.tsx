@@ -61,7 +61,7 @@ export default function LibraryPage() {
   async function fetchGames(uid: string) {
     setLoading(true)
     const { data } = await supabase
-      .from('user_games').select('*').eq('user_id', uid).order('created_at', { ascending: false })
+      .from('user_games').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(10000)
     setGames((data as UserGame[]) ?? [])
     setLoading(false)
   }

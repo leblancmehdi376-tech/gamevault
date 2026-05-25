@@ -42,7 +42,7 @@ export default async function ProfilePage({
   if (!profile) notFound()
 
   const { data: games } = await supabase
-    .from('user_games').select('*').eq('user_id', profile.id).order('created_at', { ascending: false })
+    .from('user_games').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(10000)
 
   const userGames = (games as UserGame[]) ?? []
 

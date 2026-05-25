@@ -35,6 +35,7 @@ export default function PlayersPage() {
     const { data: gameCounts } = await supabase
       .from('user_games')
       .select('user_id, status')
+      .limit(10000)
 
     const map: Record<string, PlayerStats> = {}
     for (const row of (gameCounts ?? [])) {
