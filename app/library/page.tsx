@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import NavBar from '@/components/NavBar'
 import { STATUSES, PLATFORMS } from '@/components/AddGameModal'
+import { StarRating } from '@/components/AddGameModal'
 import SteamImportModal from '@/components/SteamImportModal'
 import FilterPanel, { type Filters, type SortOption } from '@/components/FilterPanel'
 
@@ -17,6 +18,8 @@ interface UserGame {
   platform: string
   status: string
   is_favorite: boolean
+  is_multi: boolean
+  rating: number | null
   created_at: string
 }
 
@@ -61,7 +64,8 @@ export default function LibraryPage() {
   async function fetchGames(uid: string) {
     setLoading(true)
     const { data } = await supabase
-      .from('user_games').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(10000)
+      .from('user_games').select('*').eq('user_id', uid)
+      .order('created_at', { ascending: false }).limit(10000)
     setGames((data as UserGame[]) ?? [])
     setLoading(false)
   }
@@ -80,19 +84,16 @@ export default function LibraryPage() {
 
   const filtered = useMemo(() => {
     let list = [...games]
-
     if (searchQuery) list = list.filter((g) => g.title.toLowerCase().includes(searchQuery.toLowerCase()))
     if (filters.favoritesOnly) list = list.filter((g) => g.is_favorite)
     if (filters.statuses.length) list = list.filter((g) => filters.statuses.includes(g.status))
     if (filters.platforms.length) list = list.filter((g) => filters.platforms.includes(g.platform))
-
     switch (filters.sort as SortOption) {
       case 'date_asc': list.sort((a, b) => a.created_at.localeCompare(b.created_at)); break
       case 'date_desc': list.sort((a, b) => b.created_at.localeCompare(a.created_at)); break
       case 'alpha_asc': list.sort((a, b) => a.title.localeCompare(b.title)); break
       case 'alpha_desc': list.sort((a, b) => b.title.localeCompare(a.title)); break
     }
-
     return list
   }, [games, filters, searchQuery])
 
@@ -118,14 +119,11 @@ export default function LibraryPage() {
               MA BIBLIOTHÈQUE
             </h1>
             {username && (
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <Link href={`/profile/${username}`} className="hover:underline" style={{ color: 'var(--accent-hover)' }}>
-                  @{username}
-                </Link>
-              </p>
+              <Link href={`/profile/${username}`} className="text-sm hover:underline" style={{ color: 'var(--accent-hover)' }}>
+                @{username}
+              </Link>
             )}
           </div>
-
           <div className="flex flex-col items-end gap-3">
             <button onClick={() => setShowSteamModal(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
@@ -152,24 +150,14 @@ export default function LibraryPage() {
           </div>
         </div>
 
-        {/* Search + Filter row */}
+        {/* Search + Filter */}
         <div className="flex items-center gap-3 mb-6 flex-wrap">
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base" style={{ color: 'var(--text-muted)' }}>⌕</span>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher dans ma bibliothèque..."
-              className="input-base pl-9 text-sm py-2"
-            />
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher dans ma bibliothèque..." className="input-base pl-9 text-sm py-2" />
           </div>
-          <FilterPanel
-            filters={filters}
-            onChange={setFilters}
-            totalCount={games.length}
-            filteredCount={filtered.length}
-          />
+          <FilterPanel filters={filters} onChange={setFilters} totalCount={games.length} filteredCount={filtered.length} />
         </div>
 
         {/* Grid */}
@@ -186,14 +174,10 @@ export default function LibraryPage() {
               {games.length === 0 ? 'Ta bibliothèque est vide' : 'Aucun jeu pour ces filtres'}
             </p>
             {games.length === 0 ? (
-              <Link href="/search" className="btn-accent inline-flex mt-3 text-sm">
-                Chercher des jeux →
-              </Link>
+              <Link href="/search" className="btn-accent inline-flex mt-3 text-sm">Chercher des jeux →</Link>
             ) : (
               <button onClick={() => { setFilters(DEFAULT_FILTERS); setSearchQuery('') }}
-                className="btn-ghost inline-flex mt-3 text-sm">
-                Réinitialiser les filtres
-              </button>
+                className="btn-ghost inline-flex mt-3 text-sm">Réinitialiser les filtres</button>
             )}
           </div>
         ) : (
@@ -203,17 +187,11 @@ export default function LibraryPage() {
                 {game.cover_url ? (
                   <Image
                     src={game.cover_url.startsWith('http') ? game.cover_url : `https:${game.cover_url}`}
-                    alt={game.title}
-                    width={264}
-                    height={352}
-                    className="w-full h-full object-cover"
+                    alt={game.title} width={264} height={352} className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center p-2"
-                    style={{ background: 'var(--bg-hover)' }}>
-                    <span className="text-xs text-center leading-tight" style={{ color: 'var(--text-muted)' }}>
-                      {game.title}
-                    </span>
+                  <div className="w-full h-full flex items-center justify-center p-2" style={{ background: 'var(--bg-hover)' }}>
+                    <span className="text-xs text-center leading-tight" style={{ color: 'var(--text-muted)' }}>{game.title}</span>
                   </div>
                 )}
 
@@ -221,11 +199,17 @@ export default function LibraryPage() {
                 <div className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full"
                   style={{ background: STATUS_COLORS[game.status], boxShadow: `0 0 6px ${STATUS_COLORS[game.status]}` }} />
 
-                {/* Favorite star — always visible if active */}
-                {game.is_favorite && (
-                  <div className="absolute bottom-1.5 right-1.5 text-xs" style={{ filter: 'drop-shadow(0 0 4px #fbbf24)' }}>
-                    ★
+                {/* Multi badge */}
+                {game.is_multi && (
+                  <div className="absolute top-1.5 left-5 px-1 py-0.5 rounded text-xs font-bold leading-none"
+                    style={{ background: 'rgba(123,47,255,0.8)', color: '#fff', fontSize: '9px' }}>
+                    MULTI
                   </div>
+                )}
+
+                {/* Favorite star */}
+                {game.is_favorite && (
+                  <div className="absolute bottom-6 right-1.5 text-xs" style={{ filter: 'drop-shadow(0 0 4px #fbbf24)', color: '#fbbf24' }}>★</div>
                 )}
 
                 {/* Pencil */}
@@ -238,10 +222,21 @@ export default function LibraryPage() {
                   </svg>
                 </button>
 
-                {/* Bottom overlay */}
+                {/* Hover overlay with rating */}
                 <div className="overlay flex-col items-start justify-end" style={{ pointerEvents: 'none' }}>
-                  <p className="text-white text-xs font-semibold leading-tight">{game.title}</p>
-                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{game.platform} · {game.status}</p>
+                  <p className="text-white text-xs font-semibold leading-tight mb-1">{game.title}</p>
+                  <p className="text-xs mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>{game.platform} · {game.status}</p>
+                  {/* Stars — show current rating, pointer-events re-enabled via wrapper */}
+                  <div style={{ pointerEvents: 'auto' }}
+                    onClick={(e) => e.stopPropagation()}>
+                    <StarRating
+                      value={game.rating ?? 0}
+                      size={14}
+                      onChange={async (v) => {
+                        await updateGame(game.id, { rating: v || null })
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
@@ -259,10 +254,8 @@ export default function LibraryPage() {
               {editingGame.cover_url && (
                 <img
                   src={editingGame.cover_url.startsWith('http') ? editingGame.cover_url : `https:${editingGame.cover_url}`}
-                  alt={editingGame.title}
-                  className="w-14 rounded-lg flex-shrink-0 object-cover"
-                  style={{ aspectRatio: '3/4' }}
-                />
+                  alt={editingGame.title} className="w-14 rounded-lg flex-shrink-0 object-cover"
+                  style={{ aspectRatio: '3/4' }} />
               )}
               <div>
                 <h2 className="font-bold text-base leading-tight" style={{ color: 'var(--text-primary)' }}>
@@ -272,9 +265,9 @@ export default function LibraryPage() {
               </div>
             </div>
 
-            <button
-              onClick={() => setEditingGame({ ...editingGame, is_favorite: !editingGame.is_favorite })}
-              className="w-full mb-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2"
+            {/* Favorite */}
+            <button onClick={() => setEditingGame({ ...editingGame, is_favorite: !editingGame.is_favorite })}
+              className="w-full mb-3 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2"
               style={{
                 background: editingGame.is_favorite ? 'rgba(251,191,36,0.15)' : 'var(--bg-surface)',
                 border: `1px solid ${editingGame.is_favorite ? '#fbbf24' : 'var(--border)'}`,
@@ -283,13 +276,33 @@ export default function LibraryPage() {
               ★ {editingGame.is_favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
             </button>
 
+            {/* Multi */}
+            <div className="flex items-center justify-between mb-4 px-1">
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Multijoueur</span>
+              <button onClick={() => setEditingGame({ ...editingGame, is_multi: !editingGame.is_multi })}
+                className="relative w-11 h-6 rounded-full transition-all"
+                style={{ background: editingGame.is_multi ? 'var(--accent)' : 'var(--bg-hover)' }}>
+                <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all"
+                  style={{ background: '#fff', left: editingGame.is_multi ? '22px' : '2px', boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
+              </button>
+            </div>
+
+            {/* Rating */}
+            <div className="mb-4">
+              <label className="text-xs font-semibold uppercase tracking-widest mb-2 block"
+                style={{ color: 'var(--text-secondary)' }}>Note</label>
+              <StarRating value={editingGame.rating ?? 0}
+                onChange={(v) => setEditingGame({ ...editingGame, rating: v || null })}
+                size={22} />
+            </div>
+
+            {/* Status */}
             <div className="mb-4">
               <label className="text-xs font-semibold uppercase tracking-widest mb-2 block"
                 style={{ color: 'var(--text-secondary)' }}>Statut</label>
               <div className="grid grid-cols-2 gap-2">
                 {STATUSES.map((s) => (
-                  <button key={s.value}
-                    onClick={() => setEditingGame({ ...editingGame, status: s.value })}
+                  <button key={s.value} onClick={() => setEditingGame({ ...editingGame, status: s.value })}
                     className="rounded-lg py-2 px-3 text-sm font-medium transition-all text-left"
                     style={{
                       background: editingGame.status === s.value ? 'rgba(0,0,0,0.3)' : 'var(--bg-surface)',
@@ -302,6 +315,7 @@ export default function LibraryPage() {
               </div>
             </div>
 
+            {/* Platform */}
             <div className="mb-5">
               <label className="text-xs font-semibold uppercase tracking-widest mb-2 block"
                 style={{ color: 'var(--text-secondary)' }}>Plateforme</label>
@@ -315,7 +329,7 @@ export default function LibraryPage() {
             <div className="flex gap-2">
               <button onClick={async () => { await deleteGame(editingGame.id); setEditingGame(null) }}
                 disabled={deletingId === editingGame.id}
-                className="px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                className="px-3 py-2 rounded-lg text-sm font-medium"
                 style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
                 {deletingId === editingGame.id ? '...' : '🗑'}
               </button>
@@ -326,6 +340,8 @@ export default function LibraryPage() {
                     status: editingGame.status,
                     platform: editingGame.platform,
                     is_favorite: editingGame.is_favorite,
+                    is_multi: editingGame.is_multi,
+                    rating: editingGame.rating,
                   })
                   setEditingGame(null)
                 }}

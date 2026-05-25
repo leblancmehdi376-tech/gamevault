@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-server'
 import NavBar from '@/components/NavBar'
+import { StarRating } from '@/components/AddGameModal'
 
 const STATUS_COLORS: Record<string, string> = {
   '100%': '#a3e635',
@@ -18,6 +19,8 @@ interface UserGame {
   platform: string
   status: string
   is_favorite: boolean
+  is_multi: boolean
+  rating: number | null
 }
 
 interface Profile {
@@ -167,14 +170,23 @@ export default async function ProfilePage({
                   <div className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full"
                     style={{ background: STATUS_COLORS[game.status], boxShadow: `0 0 6px ${STATUS_COLORS[game.status]}` }} />
 
+                  {/* Multi badge */}
+                  {game.is_multi && (
+                    <div className="absolute top-1.5 left-5 px-1 py-0.5 rounded text-xs font-bold leading-none"
+                      style={{ background: 'rgba(123,47,255,0.8)', color: '#fff', fontSize: '9px' }}>
+                      MULTI
+                    </div>
+                  )}
+
                   {/* Favorite */}
                   {game.is_favorite && (
-                    <div className="absolute bottom-1.5 right-1.5 text-xs" style={{ filter: 'drop-shadow(0 0 4px #fbbf24)', color: '#fbbf24' }}>★</div>
+                    <div className="absolute bottom-6 right-1.5 text-xs" style={{ filter: 'drop-shadow(0 0 4px #fbbf24)', color: '#fbbf24' }}>★</div>
                   )}
 
                   <div className="overlay flex-col items-start justify-end">
-                    <p className="text-white text-xs font-semibold leading-tight">{game.title}</p>
-                    <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{game.platform} · {game.status}</p>
+                    <p className="text-white text-xs font-semibold leading-tight mb-1">{game.title}</p>
+                    <p className="text-xs mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>{game.platform} · {game.status}</p>
+                    {game.rating && <StarRating value={game.rating} readonly size={12} />}
                   </div>
                 </div>
               ))}

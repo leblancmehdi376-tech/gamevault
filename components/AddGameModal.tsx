@@ -26,9 +26,55 @@ interface Props {
   onAdded: () => void
 }
 
+export function StarRating({
+  value,
+  onChange,
+  readonly = false,
+  size = 16,
+}: {
+  value: number
+  onChange?: (v: number) => void
+  readonly?: boolean
+  size?: number
+}) {
+  const [hovered, setHovered] = useState(0)
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => {
+        const filled = star <= (hovered || value)
+        return (
+          <button
+            key={star}
+            type="button"
+            disabled={readonly}
+            onClick={() => onChange?.(star === value ? 0 : star)}
+            onMouseEnter={() => !readonly && setHovered(star)}
+            onMouseLeave={() => !readonly && setHovered(0)}
+            style={{
+              color: filled ? '#fbbf24' : 'rgba(255,255,255,0.2)',
+              fontSize: size,
+              lineHeight: 1,
+              cursor: readonly ? 'default' : 'pointer',
+              background: 'none',
+              border: 'none',
+              padding: '0 1px',
+              transition: 'color 0.1s',
+              filter: filled ? 'drop-shadow(0 0 4px #fbbf2488)' : 'none',
+            }}>
+            ★
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function AddGameModal({ game, userId, onClose, onAdded }: Props) {
   const [platform, setPlatform] = useState('PC')
   const [status, setStatus] = useState('En cours')
+  const [isMulti, setIsMulti] = useState(false)
+  const [rating, setRating] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
@@ -43,14 +89,12 @@ export default function AddGameModal({ game, userId, onClose, onAdded }: Props) 
       cover_url: game.cover?.url ?? null,
       platform,
       status,
+      is_multi: isMulti,
+      rating: rating || null,
     })
     setLoading(false)
-    if (error) {
-      setError(error.message)
-    } else {
-      onAdded()
-      onClose()
-    }
+    if (error) setError(error.message)
+    else { onAdded(); onClose() }
   }
 
   const year = game.first_release_date
@@ -77,21 +121,19 @@ export default function AddGameModal({ game, userId, onClose, onAdded }: Props) 
         </div>
 
         <div className="flex flex-col gap-4">
+          {/* Platform */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-widest mb-1.5 block"
-              style={{ color: 'var(--text-secondary)' }}>
-              Plateforme
-            </label>
+              style={{ color: 'var(--text-secondary)' }}>Plateforme</label>
             <select value={platform} onChange={(e) => setPlatform(e.target.value)} className="input-base select">
               {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
 
+          {/* Status */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-widest mb-1.5 block"
-              style={{ color: 'var(--text-secondary)' }}>
-              Statut
-            </label>
+              style={{ color: 'var(--text-secondary)' }}>Statut</label>
             <div className="grid grid-cols-2 gap-2">
               {STATUSES.map((s) => (
                 <button key={s.value} onClick={() => setStatus(s.value)}
@@ -100,7 +142,6 @@ export default function AddGameModal({ game, userId, onClose, onAdded }: Props) 
                     background: status === s.value ? 'rgba(0,0,0,0.3)' : 'var(--bg-surface)',
                     border: `1px solid ${status === s.value ? s.color : 'var(--border)'}`,
                     color: status === s.value ? s.color : 'var(--text-secondary)',
-                    boxShadow: status === s.value ? `0 0 10px ${s.color}30` : 'none',
                   }}>
                   {s.label}
                 </button>
@@ -108,9 +149,44 @@ export default function AddGameModal({ game, userId, onClose, onAdded }: Props) 
             </div>
           </div>
 
-          {error && (
-            <p className="text-sm" style={{ color: 'var(--status-dropped)' }}>{error}</p>
-          )}
+          {/* Multi tag */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: 'var(--text-secondary)' }}>Multijoueur</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Jeu joué en multi</p>
+            </div>
+            <button
+              onClick={() => setIsMulti((v) => !v)}
+              className="relative w-11 h-6 rounded-full transition-all"
+              style={{ background: isMulti ? 'var(--accent)' : 'var(--bg-hover)' }}>
+              <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all"
+                style={{
+                  background: '#fff',
+                  left: isMulti ? '22px' : '2px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+                }} />
+            </button>
+          </div>
+
+          {/* Rating */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-widest mb-2 block"
+              style={{ color: 'var(--text-secondary)' }}>Note</label>
+            <div className="flex items-center gap-3">
+              <StarRating value={rating} onChange={setRating} size={22} />
+              {rating > 0 && (
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{rating}/5</span>
+              )}
+              {rating > 0 && (
+                <button onClick={() => setRating(0)} className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
+          {error && <p className="text-sm" style={{ color: 'var(--status-dropped)' }}>{error}</p>}
 
           <div className="flex gap-3 mt-2">
             <button onClick={onClose} className="btn-ghost flex-1">Annuler</button>
