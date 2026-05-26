@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import NavBar from '@/components/NavBar'
 import AddGameModal, { type IGDBGameResult } from '@/components/AddGameModal'
-import Image from 'next/image'
 
 export default function SearchPage() {
   const [query, setQuery] = useState('')
@@ -100,12 +99,12 @@ export default function SearchPage() {
                   onClick={() => !isAdded && setSelectedGame(game)}
                   style={{ opacity: isAdded ? 0.5 : 1 }}>
                   {game.cover ? (
-                    <Image
-                      src={`https:${game.cover.url}`}
+                    <img
+                      src={game.cover.url}
                       alt={game.name}
-                      width={264}
-                      height={352}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center p-2"

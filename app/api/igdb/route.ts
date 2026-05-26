@@ -7,16 +7,21 @@ let tokenExpiry = 0
 async function getAccessToken(): Promise<string> {
   if (cachedToken && Date.now() < tokenExpiry) return cachedToken
 
+  // Force fresh token — never cache more than 24h to avoid stale tokens on Vercel
   const res = await fetch(
     `https://id.twitch.tv/oauth2/token?client_id=${process.env.IGDB_CLIENT_ID}&client_secret=${process.env.IGDB_CLIENT_SECRET}&grant_type=client_credentials`,
-    { method: 'POST' }
+    { method: 'POST', cache: 'no-store' }
   )
 
-  if (!res.ok) throw new Error(`Twitch token error: ${res.status}`)
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Twitch token error ${res.status}: ${errText}`)
+  }
 
   const data = await res.json()
   cachedToken = data.access_token
-  tokenExpiry = Date.now() + (data.expires_in - 120) * 1000
+  // Cap at 23h regardless of expires_in to stay safe
+  tokenExpiry = Date.now() + Math.min((data.expires_in - 300) * 1000, 23 * 60 * 60 * 1000)
   return cachedToken!
 }
 
@@ -48,11 +53,11 @@ export async function POST(req: NextRequest) {
 
     const games = await res.json()
 
-    // Normalize cover URLs to large size
+    // Normalize cover URLs — ensure full https URL
     const normalized = games.map((g: IGDBGame) => ({
       ...g,
       cover: g.cover
-        ? { url: g.cover.url.replace('t_thumb', 't_cover_big') }
+        ? { url: 'https:' + g.cover.url.replace('t_thumb', 't_cover_big').replace(/^https?:/, '') }
         : null,
     }))
 
