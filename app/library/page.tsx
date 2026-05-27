@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import NavBar from '@/components/NavBar'
 import { STATUSES, PLATFORMS } from '@/components/AddGameModal'
@@ -185,9 +184,11 @@ export default function LibraryPage() {
             {filtered.map((game) => (
               <div key={game.id} className="game-cover group">
                 {game.cover_url ? (
-                  <Image
+                  <img
                     src={game.cover_url.startsWith('http') ? game.cover_url : `https:${game.cover_url}`}
-                    alt={game.title} width={264} height={352} className="w-full h-full object-cover"
+                    alt={game.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center p-2" style={{ background: 'var(--bg-hover)' }}>

@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase-server'
 import NavBar from '@/components/NavBar'
 import { StarRating } from '@/components/AddGameModal'
@@ -149,12 +148,11 @@ export default async function ProfilePage({
               {userGames.map((game) => (
                 <div key={game.id} className="game-cover">
                   {game.cover_url ? (
-                    <Image
+                    <img
                       src={game.cover_url.startsWith('http') ? game.cover_url : `https:${game.cover_url}`}
                       alt={game.title}
-                      width={264}
-                      height={352}
                       className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center p-2"
