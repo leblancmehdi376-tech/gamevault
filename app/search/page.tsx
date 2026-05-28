@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import NavBar from '@/components/NavBar'
 import AddGameModal, { type IGDBGameResult } from '@/components/AddGameModal'
+import ManualAddModal from '@/components/ManualAddModal'
 
 export default function SearchPage() {
   const [query, setQuery] = useState('')
@@ -12,6 +13,7 @@ export default function SearchPage() {
   const [selectedGame, setSelectedGame] = useState<IGDBGameResult | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set())
+  const [showManual, setShowManual] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const supabase = createClient()
@@ -75,23 +77,31 @@ export default function SearchPage() {
         </div>
 
         {/* Search bar */}
-        <div className="relative mb-8 max-w-xl">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg"
-            style={{ color: 'var(--text-muted)' }}>⌕</span>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nom du jeu (ex: Dark Souls, Celeste...)"
-            className="input-base pl-10"
-            autoFocus
-          />
-          {loading && (
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm"
-              style={{ color: 'var(--text-muted)' }}>
-              ⟳
-            </span>
-          )}
+        <div className="flex gap-3 mb-8 max-w-xl">
+          <div className="relative flex-1">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg"
+              style={{ color: 'var(--text-muted)' }}>⌕</span>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Nom du jeu (ex: Dark Souls, Celeste...)"
+              className="input-base pl-10"
+              autoFocus
+            />
+            {loading && (
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm"
+                style={{ color: 'var(--text-muted)' }}>
+                ⟳
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setShowManual(true)}
+            className="btn-ghost text-sm px-4 flex-shrink-0 flex items-center gap-2"
+            title="Ajouter un jeu manuellement">
+            ✏️ Manuel
+          </button>
         </div>
 
         {/* Results grid */}
@@ -145,9 +155,16 @@ export default function SearchPage() {
         )}
 
         {!loading && query.length >= 2 && results.length === 0 && !searchError && (
-          <p className="text-center py-16" style={{ color: 'var(--text-muted)' }}>
-            Aucun résultat pour « {query} »
-          </p>
+          <div className="text-center py-16">
+            <p className="mb-4" style={{ color: 'var(--text-muted)' }}>
+              Aucun résultat pour « {query} »
+            </p>
+            <button
+              onClick={() => setShowManual(true)}
+              className="btn-ghost text-sm px-5 py-2.5 inline-flex items-center gap-2">
+              ✏️ Ajouter « {query} » manuellement
+            </button>
+          </div>
         )}
 
         {query.length === 0 && (
@@ -157,6 +174,15 @@ export default function SearchPage() {
           </div>
         )}
       </main>
+
+      {showManual && userId && (
+        <ManualAddModal
+          initialTitle={query}
+          userId={userId}
+          onClose={() => setShowManual(false)}
+          onAdded={() => {}}
+        />
+      )}
 
       {selectedGame && userId && (
         <AddGameModal
