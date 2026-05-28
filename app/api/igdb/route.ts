@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
 
     const token = await getAccessToken()
 
+    const safeQuery = query.replace(/"/g, '').replace(/'/g, '')
+
     const res = await fetch('https://api.igdb.com/v4/games', {
       method: 'POST',
       headers: {
@@ -41,20 +43,22 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'text/plain',
       },
-      body: `
-        search "${query.replace(/"/g, '')}";
-        fields name, cover.url, first_release_date, platforms.name, genres.name, summary;
-        limit 24;
-        where cover != null;
-      `,
+      // No cover filter — fetch all results then sort covered ones first
+      body: `search "${safeQuery}"; fields name, cover.url, first_release_date, platforms.name, genres.name, summary; limit 30;`,
     })
 
     if (!res.ok) throw new Error(`IGDB error: ${res.status}`)
 
     const games = await res.json()
 
-    // Normalize cover URLs — ensure full https URL
-    const normalized = games.map((g: IGDBGame) => ({
+    // Sort: games with covers first, then normalize URLs
+    const sorted = [...games].sort((a: IGDBGame, b: IGDBGame) => {
+      if (a.cover && !b.cover) return -1
+      if (!a.cover && b.cover) return 1
+      return 0
+    })
+
+    const normalized = sorted.map((g: IGDBGame) => ({
       ...g,
       cover: g.cover
         ? { url: 'https:' + g.cover.url.replace('t_thumb', 't_cover_big').replace(/^https?:/, '') }
