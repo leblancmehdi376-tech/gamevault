@@ -29,8 +29,11 @@ export default function SearchPage() {
     return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current) }
   }, [query])
 
+  const [searchError, setSearchError] = useState<string | null>(null)
+
   async function search(q: string) {
     setLoading(true)
+    setSearchError(null)
     try {
       const res = await fetch('/api/igdb', {
         method: 'POST',
@@ -38,8 +41,14 @@ export default function SearchPage() {
         body: JSON.stringify({ query: q }),
       })
       const data = await res.json()
-      setResults(Array.isArray(data) ? data : [])
-    } catch {
+      if (!res.ok) {
+        setSearchError(data.error ?? 'Erreur serveur')
+        setResults([])
+      } else {
+        setResults(Array.isArray(data) ? data : [])
+      }
+    } catch (e) {
+      setSearchError(String(e))
       setResults([])
     } finally {
       setLoading(false)
@@ -128,7 +137,14 @@ export default function SearchPage() {
           </div>
         )}
 
-        {!loading && query.length >= 2 && results.length === 0 && (
+        {searchError && (
+          <div className="rounded-lg px-4 py-3 text-sm mb-4"
+            style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}>
+            Erreur : {searchError}
+          </div>
+        )}
+
+        {!loading && query.length >= 2 && results.length === 0 && !searchError && (
           <p className="text-center py-16" style={{ color: 'var(--text-muted)' }}>
             Aucun résultat pour « {query} »
           </p>

@@ -18,8 +18,9 @@ export const metadata: Metadata = {
   title: 'GameVault — Ta bibliothèque 100%',
   description: 'Suis ta progression, partage tes complétion avec tes potes.',
   icons: {
-    icon: '/favicon.svg',
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
     shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
   },
 }
 
